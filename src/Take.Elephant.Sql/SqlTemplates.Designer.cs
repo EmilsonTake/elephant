@@ -289,7 +289,7 @@ namespace Take.Elephant.Sql {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to SELECT COLUMN_NAME, DATA_TYPE, COALESCE(CHARACTER_MAXIMUM_LENGTH, DATETIME_PRECISION) AS LENGTH_OR_PRECISION
+        ///   Looks up a localized string similar to SELECT COLUMN_NAME, DATA_TYPE, COALESCE(CHARACTER_MAXIMUM_LENGTH, DATETIME_PRECISION) AS LENGTH_OR_PRECISION,CAST(IIF(IS_NULLABLE = &apos;YES&apos;, 1, 0) AS BIT ) AS &apos;IS_NULLABLE&apos;
         ///FROM INFORMATION_SCHEMA.COLUMNS
         ///WHERE TABLE_SCHEMA = &apos;{schemaName}&apos;
         ///AND TABLE_NAME = &apos;{tableName}&apos;.
@@ -315,6 +315,26 @@ namespace Take.Elephant.Sql {
         public static string GreaterThanOrEqual {
             get {
                 return ResourceManager.GetString("GreaterThanOrEqual", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SELECT 
+        ///    c.name &apos;ColumnName&apos;,
+        ///    t.Name &apos;DataType&apos;,
+        ///    CAST(ISNULL(ISC.CHARACTER_MAXIMUM_LENGTH, 0) AS INT) &apos;MaxLength&apos;,
+        ///    CAST(c.precision AS INT) &apos;Precision&apos;,
+        ///    CAST(c.scale AS INT) &apos;Scale&apos;,
+        ///    CAST(c.is_nullable AS BIT) &apos;IsNullable&apos;,
+        ///    CAST(ISNULL(i.is_primary_key, 0) AS BIT) &apos;PrimaryKey&apos;
+        ///FROM  sys.columns c
+        ///	INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+        ///	LEFT OUTER JOIN sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+        ///	LEFT OUTER JOIN s [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string IdentifyColumnsDefinition {
+            get {
+                return ResourceManager.GetString("IdentifyColumnsDefinition", resourceCulture);
             }
         }
         

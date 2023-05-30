@@ -35,7 +35,7 @@ namespace Take.Elephant.Sql.Mapping
         /// <summary>
         /// Defines if the table schema has been synchronized with the database.
         /// </summary>
-        bool SchemaSynchronized { get;  }
+        bool SchemaSynchronized { get; }
 
         /// <summary>
         /// Synchronize the table schema in the database using the specified database.
@@ -45,7 +45,16 @@ namespace Take.Elephant.Sql.Mapping
         /// <param name="databaseDriver">The database driver.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        Task SynchronizeSchemaAsync(string connectionString, IDatabaseDriver databaseDriver,  CancellationToken cancellationToken);
+        Task SynchronizeSchemaAsync(string connectionString, IDatabaseDriver databaseDriver, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Synchronize the columns in table
+        /// </summary>
+        /// <param name="connectionString">The connection string for the execution of the synchronization SQL DDL commands.</param>
+        /// <param name="databaseDriver">The database driver.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
+        Task SynchronizeColumnsTableAsync(string connectionString, IDatabaseDriver databaseDriver, CancellationToken cancellationToken);
 
         /// <summary>
         /// Occurs when the table schema is changed in the database.

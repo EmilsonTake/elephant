@@ -54,6 +54,7 @@ namespace Take.Elephant.Sql
         LessThanOrEqual,
         Like,
         MaxLength,
-        MergeIncrement
+        MergeIncrement,
+        IdentifyColumnsDefinition
     }
 }

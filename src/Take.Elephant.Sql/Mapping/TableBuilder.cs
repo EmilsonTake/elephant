@@ -49,7 +49,12 @@ namespace Take.Elephant.Sql.Mapping
         public SchemaSynchronizationStrategy SynchronizationStrategy { get; private set; }
 
         /// <summary>
-        ///  Builds a Table for a SQL. 
+        /// Indicates if the table schema is synchronized.
+        /// </summary>
+        public SchemaSynchronizationStrategy SynchronizationTableColumnsStrategy { get; private set; } = SchemaSynchronizationStrategy.IgnoreTableColumns;
+
+        /// <summary>
+        ///  Builds a Table for a SQL.
         ///  If you do not provide a value with SynchronizationStrategy, it shall define your default value based on Debugging.IsAttached
         ///  If You are Debugging, synchronizationStrategy default value will be TryOnce. Otherwise, synchronizationStrategy defaults to Ignore.
         /// </summary>
@@ -99,7 +104,7 @@ namespace Take.Elephant.Sql.Mapping
             {
                 Columns[column.Key] = column.Value;
             }
-            
+
             return this;
         }
 
@@ -111,7 +116,8 @@ namespace Take.Elephant.Sql.Mapping
         /// <returns></returns>
         public TableBuilder WithColumnFromType<T>(string columnName)
         {
-            if (columnName == null) throw new ArgumentNullException(nameof(columnName));
+            if (columnName == null)
+                throw new ArgumentNullException(nameof(columnName));
             Columns[columnName] = new SqlType(DbTypeMapper.GetDbType(typeof(T)));
             return this;
         }
@@ -125,7 +131,8 @@ namespace Take.Elephant.Sql.Mapping
         /// <returns></returns>
         public TableBuilder WithColumnFromType<T>(string columnName, int length)
         {
-            if (columnName == null) throw new ArgumentNullException(nameof(columnName));
+            if (columnName == null)
+                throw new ArgumentNullException(nameof(columnName));
             Columns[columnName] = new SqlType(DbTypeMapper.GetDbType(typeof(T)), length);
             return this;
         }
@@ -140,7 +147,8 @@ namespace Take.Elephant.Sql.Mapping
         /// <returns></returns>
         public TableBuilder WithColumnFromType<T>(string columnName, int precision, int scale)
         {
-            if (columnName == null) throw new ArgumentNullException(nameof(columnName));
+            if (columnName == null)
+                throw new ArgumentNullException(nameof(columnName));
             Columns[columnName] = new SqlType(DbTypeMapper.GetDbType(typeof(T)), precision, scale);
             return this;
         }
@@ -226,7 +234,8 @@ namespace Take.Elephant.Sql.Mapping
         /// <returns></returns>
         public TableBuilder WithKeyColumnFromType<T>(string keyColumnName, bool isIdentity = false)
         {
-            if (keyColumnName == null) throw new ArgumentNullException(nameof(keyColumnName));
+            if (keyColumnName == null)
+                throw new ArgumentNullException(nameof(keyColumnName));
             Columns[keyColumnName] = new SqlType(DbTypeMapper.GetDbType(typeof(T)), isIdentity);
             KeyColumns.Add(keyColumnName);
             return this;
@@ -243,7 +252,7 @@ namespace Take.Elephant.Sql.Mapping
             {
                 KeyColumns.Add(keyColumnName);
             }
-            
+
             return this;
         }
 
@@ -273,12 +282,26 @@ namespace Take.Elephant.Sql.Mapping
         }
 
         /// <summary>
+        /// Indicates whether table columns are synchronized in code.
+        /// </summary>
+        /// <param name="tableColumnsSynchronized"></param>
+        /// <returns></returns>
+        public TableBuilder WithColumnsSynchronized(bool tableColumnsSynchronized)
+        {
+            SynchronizationTableColumnsStrategy = tableColumnsSynchronized
+                ? SchemaSynchronizationStrategy.SyncTableColumns
+                : SchemaSynchronizationStrategy.IgnoreTableColumns;
+
+            return this;
+        }
+
+        /// <summary>
         /// Builds a table with the builder data.
         /// </summary>
         /// <returns></returns>
         public ITable Build()
         {
-            return new Table(Name, KeyColumns.ToArray(), Columns, Schema, SynchronizationStrategy);
+            return new Table(Name, KeyColumns.ToArray(), Columns, Schema, SynchronizationStrategy, SynchronizationTableColumnsStrategy);
         }
     }
 }

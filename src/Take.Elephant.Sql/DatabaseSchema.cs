@@ -56,7 +56,7 @@ namespace Take.Elephant.Sql
                 );
             }
 
-            // Create table 
+            // Create table
             var createTableSql = databaseDriver.GetSqlStatementTemplate(SqlStatement.CreateTable).Format(
                 new
                 {
@@ -148,6 +148,65 @@ namespace Take.Elephant.Sql
             }
         }
 
+        internal static async Task<IDictionary<string, SqlType>> ColumnsTableAsync(
+            IDatabaseDriver databaseDriver,
+            DbConnection connection,
+            ITable table,
+            CancellationToken cancellationToken)
+        {
+            var tableColumnsDictionary = new Dictionary<string, SqlType>();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = databaseDriver.GetSqlStatementTemplate(SqlStatement.IdentifyColumnsDefinition).Format(
+                    new
+                    {
+                        // Do not parse the identifiers here.
+                        schemaName = table.Schema ?? databaseDriver.DefaultSchema,
+                        tableName = table.Name
+                    });
+
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+                {
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        var columnName = (string)reader[0];
+                        var columnType = (string)reader[1];
+                        var columnLength = (int)reader[2];
+                        var precision = (int)reader[3];
+                        var scale = (int)reader[4];
+                        var columnNullable = (bool)reader[5];
+                        var primaryKey = (bool)reader[6];
+                        tableColumnsDictionary.Add(columnName, new SqlType(getType(columnType), columnLength, precision, scale, columnNullable, primaryKey));
+                    }
+                }
+
+                return await Task.FromResult(tableColumnsDictionary);
+            }
+        }
+
+        private static DbType getType(string columnType)
+        {
+            switch (columnType)
+            {
+                case "int":
+                    return DbType.Int32;
+
+                case "datetimeoffset":
+                    return DbType.DateTimeOffset;
+
+                case "bigint":
+                    return DbType.UInt64;
+
+                case "float":
+                    return DbType.Decimal;
+
+                case "nvarchar":
+                default:
+                    return DbType.String;
+            }
+        }
+
         private static Task AddColumnsAsync(IDatabaseDriver databaseDriver, DbConnection connection, ITable table,
             IEnumerable<KeyValuePair<string, SqlType>> columns, CancellationToken cancellationToken) =>
                 AlterTableColumnsAsync(databaseDriver, connection, table, columns, SqlStatement.AlterTableAddColumn,
@@ -201,12 +260,15 @@ namespace Take.Elephant.Sql
                             case DbType.Int16:
                                 statement = SqlStatement.Int16IdentityColumnDefinition;
                                 break;
+
                             case DbType.Int32:
                                 statement = SqlStatement.Int32IdentityColumnDefinition;
                                 break;
+
                             case DbType.Int64:
                                 statement = SqlStatement.Int64IdentityColumnDefinition;
                                 break;
+
                             default:
                                 statement = SqlStatement.IdentityColumnDefinition;
                                 break;

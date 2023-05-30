@@ -82,7 +82,8 @@ namespace Take.Elephant.Sql
             ITable table,
             IDictionary<string, object> filterValues)
         {
-            if (filterValues == null) throw new ArgumentNullException(nameof(filterValues));
+            if (filterValues == null)
+                throw new ArgumentNullException(nameof(filterValues));
 
             return connection.CreateTextCommand(
                 databaseDriver.GetSqlStatementTemplate(SqlStatement.Delete),
@@ -102,8 +103,10 @@ namespace Take.Elephant.Sql
             IDictionary<string, object> filterValues,
             IDictionary<string, object> columnValues)
         {
-            if (filterValues == null) throw new ArgumentNullException(nameof(filterValues));
-            if (columnValues == null) throw new ArgumentNullException(nameof(columnValues));
+            if (filterValues == null)
+                throw new ArgumentNullException(nameof(filterValues));
+            if (columnValues == null)
+                throw new ArgumentNullException(nameof(columnValues));
 
             return connection.CreateTextCommand(
                 databaseDriver.GetSqlStatementTemplate(SqlStatement.Update),
@@ -204,7 +207,8 @@ namespace Take.Elephant.Sql
             string[] selectColumns,
             bool distinct = false)
         {
-            if (selectColumns == null) throw new ArgumentNullException(nameof(selectColumns));
+            if (selectColumns == null)
+                throw new ArgumentNullException(nameof(selectColumns));
 
             return connection.CreateTextCommand(
                 databaseDriver.GetSqlStatementTemplate(distinct ? SqlStatement.SelectDistinct : SqlStatement.Select),
@@ -226,7 +230,8 @@ namespace Take.Elephant.Sql
             IDictionary<string, object> filterValues = null,
             bool distinct = false)
         {
-            if (filter == null) filter = databaseDriver.GetSqlStatementTemplate(SqlStatement.OneEqualsOne);
+            if (filter == null)
+                filter = databaseDriver.GetSqlStatementTemplate(SqlStatement.OneEqualsOne);
 
             return connection.CreateTextCommand(
                 databaseDriver.GetSqlStatementTemplate(distinct ? SqlStatement.SelectCountDistinct : SqlStatement.SelectCount),

@@ -196,7 +196,7 @@
     <value>SELECT CASE WHEN EXISTS ((SELECT 1 FROM {schemaName}.{tableName} WHERE {filter})) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END</value>
   </data>
   <data name="GetTableColumns" xml:space="preserve">
-    <value>SELECT COLUMN_NAME, DATA_TYPE, COALESCE(CHARACTER_MAXIMUM_LENGTH, DATETIME_PRECISION) AS LENGTH_OR_PRECISION
+    <value>SELECT COLUMN_NAME, DATA_TYPE, COALESCE(CHARACTER_MAXIMUM_LENGTH, DATETIME_PRECISION) AS LENGTH_OR_PRECISION,CAST(IIF(IS_NULLABLE = 'YES', 1, 0) AS BIT ) AS 'IS_NULLABLE'
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_SCHEMA = '{schemaName}'
 AND TABLE_NAME = '{tableName}'</value>
@@ -206,6 +206,23 @@ AND TABLE_NAME = '{tableName}'</value>
   </data>
   <data name="GreaterThanOrEqual" xml:space="preserve">
     <value>&gt;=</value>
+  </data>
+  <data name="IdentifyColumnsDefinition" xml:space="preserve">
+    <value>SELECT 
+    c.name 'ColumnName',
+    t.Name 'DataType',
+    CAST(ISNULL(ISC.CHARACTER_MAXIMUM_LENGTH, 0) AS INT) 'MaxLength',
+    CAST(c.precision AS INT) 'Precision',
+    CAST(c.scale AS INT) 'Scale',
+    CAST(c.is_nullable AS BIT) 'IsNullable',
+    CAST(ISNULL(i.is_primary_key, 0) AS BIT) 'PrimaryKey'
+FROM  sys.columns c
+	INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+	LEFT OUTER JOIN sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+	LEFT OUTER JOIN sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+	LEFT OUTER JOIN INFORMATION_SCHEMA.COLUMNS ISC ON c.object_id = OBJECT_ID(CONCAT(ISC.TABLE_SCHEMA, '.' , ISC.TABLE_NAME)) AND ISC.COLUMN_NAME = C.name
+WHERE
+    c.object_id = OBJECT_ID('{schemaName}.{tableName}')</value>
   </data>
   <data name="IdentityColumnDefinition" xml:space="preserve">
     <value>{columnName} {sqlType} NOT NULL IDENTITY(1,1)</value>

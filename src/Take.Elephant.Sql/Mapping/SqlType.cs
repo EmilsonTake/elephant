@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Security.Principal;
 
 namespace Take.Elephant.Sql.Mapping
 {
@@ -20,6 +21,15 @@ namespace Take.Elephant.Sql.Mapping
             : this(type, false)
         {
             _length = length;
+        }
+
+        public SqlType(DbType type, int length, int precision, int scale, bool isNulllable, bool isIdentity)
+            : this(type, length)
+        {
+            IsNullable = isNulllable;
+            IsIdentity = isIdentity;
+            Precision = precision;
+            Scale = scale;
         }
 
         public SqlType(DbType type, int precision, int scale)
@@ -51,6 +61,8 @@ namespace Take.Elephant.Sql.Mapping
         public int? Scale { get; }
 
         public bool IsIdentity { get; }
+
+        public bool IsNullable { get; }
 
         public override bool Equals(object obj)
         {

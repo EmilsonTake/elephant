@@ -8,12 +8,14 @@ using System.Diagnostics;
 
 namespace Take.Elephant.Sql.Mapping
 {
-    /// <inheritdoc />        
+    /// <inheritdoc />
     public class Table : ITable
     {
         private readonly SchemaSynchronizationStrategy _synchronizationStrategy;
         private readonly SemaphoreSlim _schemaSynchronizedSemaphore;
+        private readonly SemaphoreSlim _columnsSynchronizedSemaphore;
         private int _synchronizationsTries;
+        private SchemaSynchronizationStrategy _synchronizationColumnsTableStrategy;
 
         /// <summary>
         ///  Constructor for a SQL Table.
@@ -24,15 +26,19 @@ namespace Take.Elephant.Sql.Mapping
         /// <param name="columns"></param>
         /// <param name="schema"></param>
         /// <param name="synchronizationStrategy"></param>
+        /// <param name="synchronizationColumnsTableStrategy"></param>
         public Table(
             string name,
             string[] keyColumnsNames,
             IDictionary<string, SqlType> columns,
             string schema = null,
-            SchemaSynchronizationStrategy synchronizationStrategy = SchemaSynchronizationStrategy.Default)
-            :this(name, keyColumnsNames, columns, Debugger.IsAttached, schema, synchronizationStrategy)
+            SchemaSynchronizationStrategy synchronizationStrategy = SchemaSynchronizationStrategy.Default,
+            SchemaSynchronizationStrategy synchronizationColumnsTableStrategy = SchemaSynchronizationStrategy.IgnoreTableColumns)
+            : this(name, keyColumnsNames, columns, Debugger.IsAttached, schema, synchronizationStrategy)
         {
+            _synchronizationColumnsTableStrategy = synchronizationColumnsTableStrategy;
         }
+
         /// <summary>
         ///  Constructor for a SQL Table.
         ///  It is internal as the parameter IsDebugging should be controlled by the other constructor for external clients.
@@ -45,6 +51,7 @@ namespace Take.Elephant.Sql.Mapping
         /// <param name="IsDebugging"></param>
         /// <param name="schema"></param>
         /// <param name="synchronizationStrategy"></param>
+        /// <param name="synchronizationColumnsTableStrategy"></param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
         internal Table(
@@ -53,7 +60,8 @@ namespace Take.Elephant.Sql.Mapping
             IDictionary<string, SqlType> columns,
             bool IsDebugging,
             string schema = null,
-            SchemaSynchronizationStrategy synchronizationStrategy = SchemaSynchronizationStrategy.Default)
+            SchemaSynchronizationStrategy synchronizationStrategy = SchemaSynchronizationStrategy.Ignore,
+            SchemaSynchronizationStrategy synchronizationColumnsTableStrategy = SchemaSynchronizationStrategy.IgnoreTableColumns)
         {
             if (keyColumnsNames == null)
                 throw new ArgumentNullException(nameof(keyColumnsNames));
@@ -72,29 +80,33 @@ namespace Take.Elephant.Sql.Mapping
             Columns = columns;
             Schema = schema;
             _schemaSynchronizedSemaphore = new SemaphoreSlim(1);
+            _columnsSynchronizedSemaphore = new SemaphoreSlim(1);
             if (synchronizationStrategy == SchemaSynchronizationStrategy.Default)
             {
-                _synchronizationStrategy = IsDebugging ? 
+                _synchronizationStrategy = IsDebugging ?
                     SchemaSynchronizationStrategy.TryOnce : SchemaSynchronizationStrategy.Ignore;
             }
             else
             {
                 _synchronizationStrategy = synchronizationStrategy;
             }
+
+            _synchronizationColumnsTableStrategy = synchronizationColumnsTableStrategy;
         }
-        /// <inheritdoc />        
+
+        /// <inheritdoc />
         public string Schema { get; }
 
-        /// <inheritdoc />        
+        /// <inheritdoc />
         public string Name { get; }
 
-        /// <inheritdoc />        
+        /// <inheritdoc />
         public string[] KeyColumnsNames { get; }
 
-        /// <inheritdoc />        
-        public IDictionary<string, SqlType> Columns { get; }
+        /// <inheritdoc />
+        public IDictionary<string, SqlType> Columns { get; private set; }
 
-        /// <inheritdoc />        
+        /// <inheritdoc />
         public bool SchemaSynchronized { get; private set; }
 
         public event EventHandler<DbCommandEventArgs> SchemaChanged;
@@ -104,11 +116,12 @@ namespace Take.Elephant.Sql.Mapping
             SchemaChanged?.Invoke(this, new DbCommandEventArgs(dbCommand));
         }
 
-        /// <inheritdoc />        
+        /// <inheritdoc />
         public virtual async Task SynchronizeSchemaAsync(string connectionString, IDatabaseDriver databaseDriver, CancellationToken cancellationToken)
         {
-            if (_synchronizationStrategy == SchemaSynchronizationStrategy.Ignore) return;
-            
+            if (_synchronizationStrategy == SchemaSynchronizationStrategy.Ignore)
+                return;
+
             if (ShouldSynchronizeSchema)
             {
                 await _schemaSynchronizedSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -117,11 +130,13 @@ namespace Take.Elephant.Sql.Mapping
                 {
                     if (ShouldSynchronizeSchema)
                     {
-                        if (connectionString == null) throw new ArgumentNullException(nameof(connectionString));
-                        if (databaseDriver == null) throw new ArgumentNullException(nameof(databaseDriver));
+                        if (connectionString == null)
+                            throw new ArgumentNullException(nameof(connectionString));
+                        if (databaseDriver == null)
+                            throw new ArgumentNullException(nameof(databaseDriver));
 
                         _synchronizationsTries++;
-                        
+
                         using (var connection = databaseDriver.CreateConnection(connectionString))
                         {
                             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
@@ -155,6 +170,30 @@ namespace Take.Elephant.Sql.Mapping
             }
         }
 
+        public virtual async Task SynchronizeColumnsTableAsync(string connectionString, IDatabaseDriver databaseDriver, CancellationToken cancellationToken)
+        {
+            if (_synchronizationColumnsTableStrategy == SchemaSynchronizationStrategy.IgnoreTableColumns)
+            {
+                return;
+            }
+
+            await _columnsSynchronizedSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            using (var connection = databaseDriver.CreateConnection(connectionString))
+            {
+                try
+                {
+                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+                    Columns = await DatabaseSchema.ColumnsTableAsync(databaseDriver, connection, this, cancellationToken).ConfigureAwait(false);
+                    _synchronizationColumnsTableStrategy = SchemaSynchronizationStrategy.IgnoreTableColumns;
+                }
+                finally
+                {
+                    _columnsSynchronizedSemaphore.Release();
+                }
+            }
+        }
+
         private bool ShouldSynchronizeSchema =>
             !SchemaSynchronized &&
             _synchronizationStrategy != SchemaSynchronizationStrategy.Ignore &&
@@ -168,12 +207,12 @@ namespace Take.Elephant.Sql.Mapping
         /// Try to execute the schema synchronization until it succeeds.
         /// </summary>
         UntilSuccess,
-        
+
         /// <summary>
-        /// Try to execute the schema synchronization only one time. 
+        /// Try to execute the schema synchronization only one time.
         /// </summary>
         TryOnce,
-        
+
         /// <summary>
         /// Do not try to synchronize the table schema.
         /// </summary>
@@ -182,6 +221,10 @@ namespace Take.Elephant.Sql.Mapping
         /// <summary>
         /// Will default to TryOnce if Debubber.IsAttached. Otherwise, defaults to Ignore
         /// </summary>
-        Default
+        Default,
+
+        IgnoreTableColumns,
+
+        SyncTableColumns
     }
 }

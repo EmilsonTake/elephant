@@ -45,7 +45,8 @@ namespace Take.Elephant.Sql
         {
             using (var command = connection.CreateDeleteCommand(DatabaseDriver, Table, filterValues))
             {
-                if (sqlTransaction != null) command.Transaction = sqlTransaction;
+                if (sqlTransaction != null)
+                    command.Transaction = sqlTransaction;
                 return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) > 0;
             }
         }
@@ -146,7 +147,7 @@ namespace Take.Elephant.Sql
         {
             var filter = whereStatement.Where;
             var filterValues = whereStatement.FilterValues;
-            
+
             using (var connection = await GetConnectionAsync(cancellationToken))
             {
                 if (additionalFilterValues != null)
@@ -198,6 +199,7 @@ namespace Take.Elephant.Sql
         protected async Task<DbConnection> GetConnectionAsync(CancellationToken cancellationToken)
         {
             await Table.SynchronizeSchemaAsync(ConnectionString, DatabaseDriver, cancellationToken).ConfigureAwait(false);
+            await Table.SynchronizeColumnsTableAsync(ConnectionString, DatabaseDriver, cancellationToken).ConfigureAwait(false);
             var connection = DatabaseDriver.CreateConnection(ConnectionString);
             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             return connection;
