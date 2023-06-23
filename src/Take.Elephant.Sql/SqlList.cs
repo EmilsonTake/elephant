@@ -26,11 +26,12 @@ namespace Take.Elephant.Sql
             }
         }
 
-        #endregion
+        #endregion Constructors
 
         public virtual async Task AddAsync(T value)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
             var columnValues = GetColumnValues(value);
 
             using (var cancellationTokenSource = CreateCancellationTokenSource())
@@ -48,10 +49,11 @@ namespace Take.Elephant.Sql
                 }
             }
         }
-        
+
         public virtual async Task<long> RemoveAllAsync(T value)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
             var keyColumnValues = GetKeyColumnValues(value, includeIdentityTypes: true);
             using (var cancellationTokenSource = CreateCancellationTokenSource())
             {

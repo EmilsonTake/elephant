@@ -36,9 +36,18 @@ namespace Take.Elephant.Sql
         {
             if (!TryGetSqlDbType(sqlType.Type, out var sqlDbType) || sqlType.Length == null)
             {
+                if (sqlDbType != null)
+                {
+                    return new SqlParameter(parameterName, sqlDbType.Value)
+                    {
+                        Value = value,
+                        IsNullable = sqlType.IsNullable ?? value.IsNullable()
+                    };
+                }
+
                 return CreateParameter(parameterName, value);
             }
-            
+
             return new SqlParameter(parameterName, sqlDbType.Value, sqlType.Length.Value)
             {
                 Value = value

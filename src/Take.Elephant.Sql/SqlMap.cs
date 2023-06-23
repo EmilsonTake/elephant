@@ -9,7 +9,7 @@ using Take.Elephant.Sql.Mapping;
 namespace Take.Elephant.Sql
 {
     /// <summary>
-    /// Implements the <see cref="IMap{TKey,TValue}"/> interface with a SQL database. 
+    /// Implements the <see cref="IMap{TKey,TValue}"/> interface with a SQL database.
     /// This class should be used only for local data, since the dictionary stores the values in the local process memory.
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
@@ -19,13 +19,11 @@ namespace Take.Elephant.Sql
         public SqlMap(string connectionString, ITable table, IMapper<TKey> keyMapper, IMapper<TValue> valueMapper)
             : this(new SqlDatabaseDriver(), connectionString, table, keyMapper, valueMapper)
         {
-
         }
 
         public SqlMap(IDatabaseDriver databaseDriver, string connectionString, ITable table, IMapper<TKey> keyMapper, IMapper<TValue> valueMapper)
             : base(databaseDriver, connectionString, table, keyMapper, valueMapper)
         {
-
         }
 
         public virtual async Task<bool> TryAddAsync(TKey key,
@@ -39,8 +37,8 @@ namespace Take.Elephant.Sql
                 {
                     var columnValues = GetColumnValues(key, value, true);
                     var keyColumnValues = GetKeyColumnValues(columnValues);
-                    using (var command = overwrite ? 
-                        connection.CreateMergeCommand(DatabaseDriver, Table, keyColumnValues, columnValues) : 
+                    using (var command = overwrite ?
+                        connection.CreateMergeCommand(DatabaseDriver, Table, keyColumnValues, columnValues) :
                         connection.CreateInsertWhereNotExistsCommand(DatabaseDriver, Table, keyColumnValues, columnValues))
                     {
                         return await command.ExecuteNonQueryAsync(cancellationTokenSource.Token).ConfigureAwait(false) > 0;
@@ -99,19 +97,22 @@ namespace Take.Elephant.Sql
             var selectColumns = Table.KeyColumnsNames;
             return Task.FromResult<IAsyncEnumerable<TKey>>(
                 new DbDataReaderAsyncEnumerable<TKey>(
-                    GetConnectionAsync, 
-                    c => c.CreateSelectCommand(DatabaseDriver, Table, null, selectColumns), 
-                    KeyMapper, 
-                    selectColumns, 
+                    GetConnectionAsync,
+                    c => c.CreateSelectCommand(DatabaseDriver, Table, null, selectColumns),
+                    KeyMapper,
+                    selectColumns,
                     UseFullyAsyncEnumerator));
         }
 
         public virtual async Task SetPropertyValueAsync<TProperty>(TKey key, string propertyName,
             TProperty propertyValue, CancellationToken cancellationToken = default)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
-            if (!Table.Columns.ContainsKey(propertyName)) throw new ArgumentException(@"Invalid property", nameof(propertyName));           
-            if (Table.KeyColumnsNames.Contains(propertyName)) throw new ArgumentException(@"A key property cannot be changed", nameof(propertyName));
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            if (!Table.Columns.ContainsKey(propertyName))
+                throw new ArgumentException(@"Invalid property", nameof(propertyName));
+            if (Table.KeyColumnsNames.Contains(propertyName))
+                throw new ArgumentException(@"A key property cannot be changed", nameof(propertyName));
 
             using (var cancellationTokenSource = CreateCancellationTokenSource())
             {
@@ -133,8 +134,10 @@ namespace Take.Elephant.Sql
 
         public virtual async Task MergeAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
 
             using (var cancellationTokenSource = CreateCancellationTokenSource())
             {
@@ -160,8 +163,10 @@ namespace Take.Elephant.Sql
         public virtual async Task<TProperty> GetPropertyValueOrDefaultAsync<TProperty>(TKey key, string propertyName,
             CancellationToken cancellationToken = default)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
-            if (!Table.Columns.ContainsKey(propertyName)) throw new ArgumentException(@"Invalid property", nameof(propertyName));
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            if (!Table.Columns.ContainsKey(propertyName))
+                throw new ArgumentException(@"Invalid property", nameof(propertyName));
 
             using (var cancellationTokenSource = CreateCancellationTokenSource())
             {
@@ -200,7 +205,7 @@ namespace Take.Elephant.Sql
                     var newColumnValues = GetColumnValues(key, newValue, true);
 
                     using (var command = connection.CreateTextCommand(
-                        DatabaseDriver.GetSqlStatementTemplate(SqlStatement.Update),                        
+                        DatabaseDriver.GetSqlStatementTemplate(SqlStatement.Update),
                         new
                         {
                             schemaName = DatabaseDriver.ParseIdentifier(Table.Schema ?? DatabaseDriver.DefaultSchema),
@@ -208,7 +213,7 @@ namespace Take.Elephant.Sql
                             columnValues = SqlHelper.GetCommaEqualsStatement(DatabaseDriver, newColumnValues.Keys.ToArray()),
                             filter = SqlHelper.GetAndEqualsStatement(DatabaseDriver, oldColumnValues.Keys.ToArray(), filterOldColumnValues.Keys.ToArray())
                         },
-                        newColumnValues.Concat(filterOldColumnValues).Select(c => c.ToDbParameter(DatabaseDriver))))
+                        newColumnValues.Concat(filterOldColumnValues).Select(c => c.ToDbParameter(DatabaseDriver, Table.Columns))))
                     {
                         return await command.ExecuteNonQueryAsync(cancellationTokenSource.Token).ConfigureAwait(false) == 1;
                     }

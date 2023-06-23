@@ -52,6 +52,8 @@ namespace Take.Elephant.Sql.Mapping
 
         public bool IsIdentity { get; }
 
+        public bool? IsNullable { get; }
+
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj))
