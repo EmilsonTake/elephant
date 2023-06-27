@@ -21,21 +21,24 @@ namespace Take.Elephant.Tests.Sql.PostgreSql
         {
             using (var connection = DatabaseDriver.CreateConnection(ConnectionString))
             {
-                connection.Open();
-                using (var command = connection.CreateCommand())
+                try
                 {
-                    command.CommandText = $"DROP TABLE IF EXISTS {DatabaseDriver.ParseIdentifier(schemaName ?? DatabaseDriver.DefaultSchema)}.{DatabaseDriver.ParseIdentifier(tableName)}";
-                    command.ExecuteNonQuery();
+                    connection.Open();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = $"DROP TABLE IF EXISTS {DatabaseDriver.ParseIdentifier(schemaName ?? DatabaseDriver.DefaultSchema)}.{DatabaseDriver.ParseIdentifier(tableName)}";
+                        command.ExecuteNonQuery();
+                    }
+                    connection.Close();
                 }
-                connection.Close();
+                catch (Exception ex)
+                {
+                }
             }
         }
 
         public void Dispose()
         {
-            
         }
-
-
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 
 namespace Take.Elephant.Sql.Mapping
 {
@@ -27,6 +28,13 @@ namespace Take.Elephant.Sql.Mapping
         {
             Precision = precision;
             Scale = scale;
+        }
+
+        public SqlType(DbType type, int? length, bool? isNullable, bool isIdentity = false)
+            : this(type, isIdentity)
+        {
+            _length = length;
+            IsNullable = isNullable;
         }
 
         public DbType Type { get; }
@@ -65,7 +73,12 @@ namespace Take.Elephant.Sql.Mapping
 
         private bool Equals(SqlType other)
         {
-            return _length == other._length && Type == other.Type && Precision == other.Precision && Scale == other.Scale && IsIdentity == other.IsIdentity;
+            return _length == other._length
+                && Type == other.Type
+                && Scale == other.Scale
+                && Precision == other.Precision
+                && IsIdentity == other.IsIdentity
+                && IsNullable == other.IsNullable;
         }
 
         public override int GetHashCode()
@@ -77,6 +90,7 @@ namespace Take.Elephant.Sql.Mapping
                 hashCode = (hashCode * 397) ^ Precision.GetHashCode();
                 hashCode = (hashCode * 397) ^ Scale.GetHashCode();
                 hashCode = (hashCode * 397) ^ IsIdentity.GetHashCode();
+                hashCode = (hashCode * 397) ^ IsNullable.GetHashCode();
                 return hashCode;
             }
         }
