@@ -52,8 +52,8 @@ namespace Take.Elephant.Sql.PostgreSql
             return new NpgsqlParameter(parameterName, sqlType.Type)
             {
                 Value = value,
-                Size = sqlType.Length.Value,
-                IsNullable = sqlType.IsNullable ?? value.IsNullable()
+                IsNullable = sqlType.IsNullable ?? value.IsNullable(),
+                Size = sqlType.Length != null ? sqlType.Length.Value : 0
             };
         }
 
