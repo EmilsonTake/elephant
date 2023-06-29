@@ -9,6 +9,7 @@ using System.Linq;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using Shouldly;
+using System.Collections.Generic;
 
 namespace Take.Elephant.Tests.Sql
 {
@@ -36,6 +37,7 @@ namespace Take.Elephant.Tests.Sql
                 .WithKeyColumnsNames(nameof(FakeDocument.Id))
                 .WithColumnsFromTypeProperties<FakeDocument>(PropertyFilter)
                 .WithColumn(nameof(FakeDocument.PersonalField), new SqlType(DbType.String, 500))
+                .WithColumn(nameof(FakeDocument.IdIsNull), new SqlType(DbType.Int32))
                 .WithColumn(nameof(FakeDocument.PersonalNotNull), new SqlType(DbType.String, 50, isNullable: true))
                 .Build();
 
@@ -65,16 +67,21 @@ namespace Take.Elephant.Tests.Sql
                 (i.DecimalProperty == param5 || i.FloatProperty == param6) &&
                 i.BooleanProperty == param7 &&
                 i.GuidProperty == param8 &&
-                (i.PersonalNotNull == param9);
+                i.PersonalNotNull == param9;
 
             var target = GetTarget(expression);
 
+            var param = new Dictionary<string, object>(target.FilterValues)
+            {
+                {nameof(FakeDocument.IdIsNull), 999}
+            };
+
             // Act
-            var paramList = target.FilterValues?.ToDbParameters(DatabaseDriver, GetTable());
+            var paramList = param?.ToDbParameters(DatabaseDriver, GetTable());
             var actual = Enumerable.ToList(paramList);
 
             // Assert
-            AssertEquals(actual.Count, 10);
+            AssertEquals(actual.Count, 11);
 
             AssertEquals(actual[0].ParameterName, "@Id");
             AssertEquals(actual[0].Value, param0);
@@ -136,12 +143,21 @@ namespace Take.Elephant.Tests.Sql
             AssertEquals(actual[9].DbType, DbType.String);
             AssertEquals(((SqlParameter)actual[9]).SqlDbType, SqlDbType.NVarChar);
             ((SqlParameter)actual[9]).IsNullable.ShouldBeTrue();
+
+            AssertEquals(actual[10].ParameterName, "@IdIsNull");
+            AssertEquals(actual[10].Value, null);
+            AssertEquals(actual[10].Direction, ParameterDirection.Input);
+            AssertEquals(actual[10].DbType, DbType.Int32);
+            AssertEquals(((SqlParameter)actual[10]).SqlDbType, SqlDbType.Int);
+            ((SqlParameter)actual[10]).IsNullable.ShouldBeTrue();
         }
     }
 
     internal class FakeDocument : Item
     {
         public int Id { get; set; }
+
+        public int? IdIsNull { get; set; }
 
         public string Name { get; set; }
 

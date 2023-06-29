@@ -37,6 +37,18 @@ namespace Take.Elephant.Sql.Mapping
             IsNullable = isNullable;
         }
 
+        public SqlType(DbType type, bool? isNullable, bool isIdentity)
+            : this(type, isIdentity)
+        {
+            IsNullable = isNullable;
+        }
+
+        public SqlType(DbType type, bool? isNullable)
+            : this(type, false)
+        {
+            IsNullable = isNullable;
+        }
+
         public DbType Type { get; }
 
         public int? Length

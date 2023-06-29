@@ -26,7 +26,7 @@ namespace Take.Elephant.Sql
         /// <returns></returns>
         public static bool IsNullable(this object value)
         {
-            return Convert.IsDBNull(value);
+            return value == null || Convert.IsDBNull(value);
         }
 
         public static DbParameter ToDbParameter(this KeyValuePair<string, object> keyValuePair, IDatabaseDriver databaseDriver)
