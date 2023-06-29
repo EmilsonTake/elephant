@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Data.Common;
 using Take.Elephant.Sql;
 using Take.Elephant.Sql.PostgreSql;
@@ -21,24 +21,21 @@ namespace Take.Elephant.Tests.Sql.PostgreSql
         {
             using (var connection = DatabaseDriver.CreateConnection(ConnectionString))
             {
-                try
+                connection.Open();
+                using (var command = connection.CreateCommand())
                 {
-                    connection.Open();
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = $"DROP TABLE IF EXISTS {DatabaseDriver.ParseIdentifier(schemaName ?? DatabaseDriver.DefaultSchema)}.{DatabaseDriver.ParseIdentifier(tableName)}";
-                        command.ExecuteNonQuery();
-                    }
-                    connection.Close();
+                    command.CommandText = $"DROP TABLE IF EXISTS {DatabaseDriver.ParseIdentifier(schemaName ?? DatabaseDriver.DefaultSchema)}.{DatabaseDriver.ParseIdentifier(tableName)}";
+                    command.ExecuteNonQuery();
                 }
-                catch (Exception ex)
-                {
-                }
+                connection.Close();
             }
         }
 
         public void Dispose()
         {
+            
         }
+
+
     }
 }

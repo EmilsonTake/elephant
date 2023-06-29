@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Reflection;
@@ -51,7 +51,7 @@ namespace Take.Elephant.Sql
                 {typeof (DateTime?), DbType.DateTime},
                 {typeof (DateTimeOffset?), DbType.DateTimeOffset}
             };
-        }
+        }        
 
         public static DbType GetDbType(Type type)
         {
@@ -69,8 +69,7 @@ namespace Take.Elephant.Sql
 
         public object ToDbType(object value, DbType type, int? length = null)
         {
-            if (value == null)
-                return DBNull.Value;
+            if (value == null) return DBNull.Value;
             if (type == DbType.String)
             {
                 if (!(value is string))
@@ -80,7 +79,7 @@ namespace Take.Elephant.Sql
 
                 if (length.HasValue && length.Value < int.MaxValue)
                 {
-                    value = ((string)value).Left(length.Value);
+                    value = ((string) value).Left(length.Value);
                 }
             }
 
@@ -125,5 +124,6 @@ namespace Take.Elephant.Sql
             }
             throw new NotSupportedException($"Property type '{propertyType.Name}' is not supported");
         }
+
     }
 }
