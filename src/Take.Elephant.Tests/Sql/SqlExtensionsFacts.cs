@@ -73,7 +73,7 @@ namespace Take.Elephant.Tests.Sql
 
             var param = new Dictionary<string, object>(target.FilterValues)
             {
-                {nameof(FakeDocument.IdIsNull), 999}
+                {nameof(FakeDocument.IdIsNull), null}
             };
 
             // Act
